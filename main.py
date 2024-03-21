@@ -97,7 +97,7 @@ async def send_message_at_time(channel_id, message, hour, minute):
 # Fonction pour mettre à jour les données dans MongoDB
 def update_counter(user_id, count):
     # Accéder à la collection des utilisateurs
-    users_collection = client["QuoiCouCafeCluster"]["utilisateurs"]
+    users_collection = client["QuoiCouCafeBDD"]["compteurs_quoi"]
 
     # Vérifier si l'utilisateur existe déjà dans la base de données
     user_data = users_collection.find_one({"_id": user_id})
@@ -109,6 +109,28 @@ def update_counter(user_id, count):
         # L'utilisateur n'existe pas, l'insérer avec le compteur
         users_collection.insert_one({"_id": user_id, "compteur_quoi": count})
 
+import random
+
+# Fonction pour déterminer la réponse à envoyer
+def determine_response_QUOI():
+    # Générer un nombre aléatoire entre 0 et 1
+    random_number = random.random()
+    # Si le nombre aléatoire est inférieur ou égal à 0.0003 (0.03% de chance)
+    if random_number <= 0.0003:
+        return "coupaielecafé"
+    else:
+        return "COUBEH"
+
+# Fonction pour déterminer la réponse à envoyer
+def determine_response_POURQUOI():
+    # Générer un nombre aléatoire entre 0 et 1
+    random_number = random.random()
+    # Si le nombre aléatoire est inférieur ou égal à 0.0003 (0.03% de chance)
+    if random_number <= 0.0003:
+        return "FEUR_Shiny.gif"
+    else:
+        return "Pour FEUR"
+    
 # Événement de réception de message
 @bot.event
 async def on_message(message):
@@ -117,7 +139,9 @@ async def on_message(message):
         # Incrémente le compteur d'utilisation pour cet utilisateur
         user_id = message.author.id
         compteur_quoi[user_id] = compteur_quoi.get(user_id, 0) + 1
-        await message.channel.send('COUBEH')
+        # Déterminer la réponse à envoyer
+        response = determine_response_QUOI()
+        await message.channel.send(response)
         
         # Mettre à jour les données dans MongoDB
         update_counter(user_id, compteur_quoi[user_id])
@@ -126,7 +150,8 @@ async def on_message(message):
         # Incrémente le compteur d'utilisation pour cet utilisateur
         user_id = message.author.id
         compteur_quoi[user_id] = compteur_quoi.get(user_id, 0) + 1
-        await message.channel.send('Pour FEUR')
+        responseP = determine_response_POURQUOI()
+        await message.channel.send(responseP)
 
         # Mettre à jour les données dans MongoDB
         update_counter(user_id, compteur_quoi[user_id])
@@ -137,6 +162,7 @@ async def on_message(message):
 
     # Permettre au bot de continuer à traiter les autres événements de message
     await bot.process_commands(message)
+
 
 #Accès à la liste des compteurs de "quoi"
 @bot.command(name="compteurs_quoi")
