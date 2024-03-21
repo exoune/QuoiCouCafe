@@ -116,7 +116,7 @@ def determine_response_QUOI():
     # Générer un nombre aléatoire entre 0 et 1
     random_number = random.random()
     # Si le nombre aléatoire est inférieur ou égal à 0.0003 (0.03% de chance)
-    if random_number <= 5:
+    if random_number <= 0.2:
         return "coupaielecafé"
     else:
         return "COUBEH"
@@ -126,7 +126,7 @@ def determine_response_POURQUOI():
     # Générer un nombre aléatoire entre 0 et 1
     random_number = random.random()
     # Si le nombre aléatoire est inférieur ou égal à 0.0003 (0.03% de chance)
-    if random_number <= 5:
+    if random_number <= 0.2:
         return "FEUR_Shiny.gif"
     else:
         return "Pour FEUR"
