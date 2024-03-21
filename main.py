@@ -141,7 +141,8 @@ async def on_message(message):
         compteur_quoi[user_id] = compteur_quoi.get(user_id, 0) + 1
         # Déterminer la réponse à envoyer
         response = determine_response_QUOI()
-        await message.channel.send(response)
+        # Utiliser la fonction reply pour répondre
+        await message.reply(response)
         
         # Mettre à jour les données dans MongoDB
         update_counter(user_id, compteur_quoi[user_id])
@@ -151,7 +152,7 @@ async def on_message(message):
         user_id = message.author.id
         compteur_quoi[user_id] = compteur_quoi.get(user_id, 0) + 1
         responseP = determine_response_POURQUOI()
-        await message.channel.send(responseP)
+        await message.reply(responseP)
 
         # Mettre à jour les données dans MongoDB
         update_counter(user_id, compteur_quoi[user_id])
@@ -162,6 +163,7 @@ async def on_message(message):
 
     # Permettre au bot de continuer à traiter les autres événements de message
     await bot.process_commands(message)
+
 
 
 #Accès à la liste des compteurs de "quoi"
