@@ -8,7 +8,7 @@ WORKDIR /app
 COPY . .
 
 # Installer les dépendances
-RUN pip install --no-cache-dir -U discord.py python-dotenv
+RUN pip install --no-cache-dir -U discord.py python-dotenv pymongo
 
 # Commande pour exécuter le bot lorsque le conteneur démarre
 CMD ["python", "main.py"]
