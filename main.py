@@ -7,18 +7,9 @@ import os
 from dotenv import load_dotenv
 import sys
 import csv
-from pymongo.mongo_client import MongoClient
+import random
 
-#mongodb+srv://fionalarreur458:<password>@quoicoucluster.jzxpo3p.mongodb.net/
-uri = "mongodb+srv://fionalarreur458:owKiGViCFYnY3fSQ@quoicoucluster.jzxpo3p.mongodb.net/?retryWrites=true&w=majority&appName=QuoiCouCluster"
-# Create a new client and connect to the server
-client = MongoClient(uri)
-# Send a ping to confirm a successful connection
-try:
-    client.admin.command('ping')
-    print("Pinged your deployment. You successfully connected to MongoDB!")
-except Exception as e:
-    print(e)
+
 load_dotenv()
 
 # Token de votre bot Discord
@@ -94,29 +85,12 @@ async def send_message_at_time(channel_id, message, hour, minute):
         else:
             print(f"Channel with ID {channel_id} not found. Message not sent.")
 
-# Fonction pour mettre à jour les données dans MongoDB
-def update_counter(user_id, count):
-    # Accéder à la collection des utilisateurs
-    users_collection = client["QuoiCouCafeBDD"]["compteurs_quoi"]
-
-    # Vérifier si l'utilisateur existe déjà dans la base de données
-    user_data = users_collection.find_one({"_id": user_id})
-
-    if user_data:
-        # L'utilisateur existe déjà, mettre à jour le compteur
-        users_collection.update_one({"_id": user_id}, {"$set": {"compteur_quoi": count}})
-    else:
-        # L'utilisateur n'existe pas, l'insérer avec le compteur
-        users_collection.insert_one({"_id": user_id, "compteur_quoi": count})
-
-import random
-
 # Fonction pour déterminer la réponse à envoyer
 def determine_response_QUOI():
     # Générer un nombre aléatoire entre 0 et 1
     random_number = random.random()
     # Si le nombre aléatoire est inférieur ou égal à 0.0003 (0.03% de chance)
-    if random_number <= 0.9:
+    if random_number <= 0.2:
         return "coupaielecafé"
     else:
         return "COUBEH"
@@ -126,7 +100,7 @@ def determine_response_POURQUOI():
     # Générer un nombre aléatoire entre 0 et 1
     random_number = random.random()
     # Si le nombre aléatoire est inférieur ou égal à 0.0003 (0.03% de chance)
-    if random_number <= 0.9:
+    if random_number <= 0.2:
         return "FEUR_Shiny.gif"
     else:
         return "Pour FEUR"
@@ -143,9 +117,6 @@ async def on_message(message):
         response = determine_response_QUOI()
         # Utiliser la fonction reply pour répondre
         await message.reply(response)
-        
-        # Mettre à jour les données dans MongoDB
-        update_counter(user_id, compteur_quoi[user_id])
       
     if 'pourquoi' in message.content.lower().split():
         # Incrémente le compteur d'utilisation pour cet utilisateur
@@ -153,9 +124,6 @@ async def on_message(message):
         compteur_quoi[user_id] = compteur_quoi.get(user_id, 0) + 1
         responseP = determine_response_POURQUOI()
         await message.reply(responseP)
-
-        # Mettre à jour les données dans MongoDB
-        update_counter(user_id, compteur_quoi[user_id])
 
     if message.content.startswith('!pause'):
         # Envoyer le message "PAUUUUUUUSE !!!!!" dans le canal spécifié
