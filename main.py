@@ -7,8 +7,18 @@ import os
 from dotenv import load_dotenv
 import sys
 import csv
+from pymongo.mongo_client import MongoClient
 
-
+#mongodb+srv://fionalarreur458:<password>@quoicoucluster.jzxpo3p.mongodb.net/
+uri = "mongodb+srv://fionalarreur458:owKiGViCFYnY3fSQ@quoicoucluster.jzxpo3p.mongodb.net/?retryWrites=true&w=majority&appName=QuoiCouCluster"
+# Create a new client and connect to the server
+client = MongoClient(uri)
+# Send a ping to confirm a successful connection
+try:
+    client.admin.command('ping')
+    print("Pinged your deployment. You successfully connected to MongoDB!")
+except Exception as e:
+    print(e)
 load_dotenv()
 
 # Token de votre bot Discord
@@ -84,6 +94,21 @@ async def send_message_at_time(channel_id, message, hour, minute):
         else:
             print(f"Channel with ID {channel_id} not found. Message not sent.")
 
+# Fonction pour mettre à jour les données dans MongoDB
+def update_counter(user_id, count):
+    # Accéder à la collection des utilisateurs
+    users_collection = client["QuoiCouCafeCluster"]["utilisateurs"]
+
+    # Vérifier si l'utilisateur existe déjà dans la base de données
+    user_data = users_collection.find_one({"_id": user_id})
+
+    if user_data:
+        # L'utilisateur existe déjà, mettre à jour le compteur
+        users_collection.update_one({"_id": user_id}, {"$set": {"compteur_quoi": count}})
+    else:
+        # L'utilisateur n'existe pas, l'insérer avec le compteur
+        users_collection.insert_one({"_id": user_id, "compteur_quoi": count})
+
 # Événement de réception de message
 @bot.event
 async def on_message(message):
@@ -93,12 +118,18 @@ async def on_message(message):
         user_id = message.author.id
         compteur_quoi[user_id] = compteur_quoi.get(user_id, 0) + 1
         await message.channel.send('COUBEH')
+        
+        # Mettre à jour les données dans MongoDB
+        update_counter(user_id, compteur_quoi[user_id])
       
     if 'pourquoi' in message.content.lower().split():
         # Incrémente le compteur d'utilisation pour cet utilisateur
         user_id = message.author.id
         compteur_quoi[user_id] = compteur_quoi.get(user_id, 0) + 1
         await message.channel.send('Pour FEUR')
+
+        # Mettre à jour les données dans MongoDB
+        update_counter(user_id, compteur_quoi[user_id])
 
     if message.content.startswith('!pause'):
         # Envoyer le message "PAUUUUUUUSE !!!!!" dans le canal spécifié
