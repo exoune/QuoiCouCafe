@@ -9,8 +9,12 @@ import sys
 import csv
 import random
 
+ShinyBOARD = "LUCAS 3 : 1"
 
 load_dotenv()
+
+#lien du feur shiny
+gif_path = "FEUR_Shiny.gif"
 
 # Token de votre bot Discord
 TOKEN = os.environ['TOKEN']
@@ -37,7 +41,7 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 #fonction pour sauvegarder le compteur de quoi dans un fichier csv
 async def save_counters_to_csv():
-  with open('compteurs_quoi.csv', mode='w', newline='') as file:
+  with open('data/compteurs_quoi.csv', mode='w', newline='') as file:
       writer = csv.writer(file)
       writer.writerow(['Utilisateur', 'Compteur'])
       for user_id, count in compteur_quoi.items():
@@ -92,6 +96,8 @@ def determine_response_QUOI():
     # Si le nombre aléatoire est inférieur ou égal à 0.0003 (0.03% de chance)
     if random_number <= 0.2:
         return "coupaielecafé"
+    if random_number <= 0.05:
+        return "coutéunemerde"
     else:
         return "COUBEH"
 
@@ -101,7 +107,9 @@ def determine_response_POURQUOI():
     random_number = random.random()
     # Si le nombre aléatoire est inférieur ou égal à 0.0003 (0.03% de chance)
     if random_number <= 0.2:
-        return "FEUR_Shiny.gif"
+        with open(gif_path, "rb") as file:
+            gif = discord.File(file)
+            return gif
     else:
         return "Pour FEUR"
     
@@ -123,7 +131,7 @@ async def on_message(message):
         user_id = message.author.id
         compteur_quoi[user_id] = compteur_quoi.get(user_id, 0) + 1
         responseP = determine_response_POURQUOI()
-        await message.reply(responseP)
+        await message.reply(file=responseP)
 
     if message.content.startswith('!pause'):
         # Envoyer le message "PAUUUUUUUSE !!!!!" dans le canal spécifié
@@ -137,23 +145,43 @@ async def on_message(message):
 #Accès à la liste des compteurs de "quoi"
 @bot.command(name="compteurs_quoi")
 async def compteurs_quoi(ctx):
-    # Vérifie si l'auteur de la commande est autorisé à voir les compteurs
-    if ctx.author.guild_permissions.administrator:
-        # Crée une liste de chaînes contenant les compteurs de chaque utilisateur
-        compteur_liste = [f"{bot.get_user(user_id).name}: {count}" for user_id, count in compteur_quoi.items()]
-        # Si aucun utilisateur n'a utilisé "quoi"
-        if not compteur_liste:
-            await ctx.send("Aucun utilisateur n'a utilisé le mot 'quoi'.")
-        else:
-            # Envoie la liste des compteurs à l'utilisateur qui a exécuté la commande
-            await ctx.send("\n".join(compteur_liste))
+    # Crée une liste de chaînes contenant les compteurs de chaque utilisateur
+    compteur_liste = [f"{bot.get_user(user_id).name}: {count}" for user_id, count in compteur_quoi.items()]
+    # Si aucun utilisateur n'a utilisé "quoi"
+    if not compteur_liste:
+        await ctx.send("Aucun utilisateur n'a utilisé le mot 'quoi'.")
     else:
-        await ctx.send("Vous n'avez pas la permission d'accéder à cette commande.")
+        # Envoie la liste des compteurs à l'utilisateur qui a exécuté la commande
+        await ctx.send("\n".join(compteur_liste))
+
+#Commande pour proposer une pause l'aprem
+@bot.command(name="pause_aprem")
+async def pause_aprem(ctx):
+    sent_message = await ctx.send("Pause l'aprem ?")
+    await sent_message.add_reaction("🌞")  # Soleil
+
+@bot.command(name="shiny_board")
+async def shiny_board(ctx):
+    sent_message = await ctx.send(ShinyBOARD)
+    await sent_message.add_reaction("✌️")  # Soleil
+
+# Événement de réaction
+@bot.event
+async def on_reaction_add(reaction, user):
+    # Vérifier si le message est "pause l'aprem ?" et s'il y a plus de 3 réactions soleil
+    if reaction.message.content == "Pause l'aprem ?" and str(reaction.emoji) == "🌞" and reaction.count > 3:
+        channel = bot.get_channel(CHANNEL_ID)
+        if channel:
+            # Envoyer le message "PAUSE !" à 14h30
+            await send_message_at_time(channel_id=CHANNEL_ID, message="PAUSE !", hour=13, minute=30)
+        else:
+            print(f"Channel with ID {CHANNEL_ID} not found. Message not sent.")
 
 
 # Événement de démarrage du bot
 @bot.event
 async def on_ready():
+    await save_counters_to_csv()
     if bot.user:
         print(f'{bot.user.name} est prêt à fonctionner !')
     else:
