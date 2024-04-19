@@ -9,12 +9,7 @@ import sys
 import csv
 import random
 
-ShinyBOARD = "LUCAS 3 : 1"
-
 load_dotenv()
-
-#lien du feur shiny
-gif_path = "FEUR_Shiny.gif"
 
 # Token de votre bot Discord
 TOKEN = os.environ['TOKEN']
@@ -28,9 +23,6 @@ USER_ID = 365180026376945667
 # Nombre de réactions pour déclencher l'événement
 REACTION_THRESHOLD = 4
 
-# Initialisation du dictionnaire pour stocker le compteur d'utilisation de "quoi" par utilisateur
-compteur_quoi = {}
-
 # Définir les intents
 intents = discord.Intents.all()
 intents.messages = True  # Autoriser la réception et l'envoi de messages
@@ -38,14 +30,6 @@ intents.guilds = True    # Autoriser l'accès aux informations des serveurs
 
 # Initialisation du bot avec les intents
 bot = commands.Bot(command_prefix='!', intents=intents)
-
-#fonction pour sauvegarder le compteur de quoi dans un fichier csv
-async def save_counters_to_csv():
-  with open('data/compteurs_quoi.csv', mode='w', newline='') as file:
-      writer = csv.writer(file)
-      writer.writerow(['Utilisateur', 'Compteur'])
-      for user_id, count in compteur_quoi.items():
-          writer.writerow([user_id, count])
 
 # Fonction pour envoyer un message à un canal spécifique à une heure précise
 async def send_message_at_time(channel_id, message, hour, minute):
@@ -65,94 +49,68 @@ async def send_message_at_time(channel_id, message, hour, minute):
         await asyncio.sleep(wait_seconds)
 
         # Envoyer le message
-        channel = bot.get_channel(channel_id)
-        if channel:
-            # Envoyer un gif de chat
-            await channel.send("https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif")
-            # Vérifier s'il s'agit du message "Clémence au dodo ! HOP HOP HOP on arrête de travailler"
-            if message == "Clémence au dodo ! HOP HOP HOP on arrête de travailler":
-                user = bot.get_user(USER_ID)
-                if user:
-                    message += f" {user.mention}"
-            # Vérifier s'il s'agit des messages nécessitant une mention de rôle
-            if "Pause 10h15 ?" in message or "Miam 12h : 🐮 ou 12h15 : 🐔 ?" in message:
-                role = discord.utils.get(channel.guild.roles, name="QuoiCouPauseurs")
-                if role:
-                    message += f" {role.mention}"
-            sent_message = await channel.send(message)
-            # Ajouter des réactions au message
-            if "Pause 10h15 ?" in message:
-                await sent_message.add_reaction("🌞")  # Soleil
-            elif "Miam 12h : 🐮 ou 12h15 : 🐔 ?" in message:
-                await sent_message.add_reaction("🐮")  # Vache
-                await sent_message.add_reaction("🐔")  # Poulet
-        else:
-            print(f"Channel with ID {channel_id} not found. Message not sent.")
+        if now.weekday() < 5:  # Vérifier si ce n'est pas le week-end
+            channel = bot.get_channel(channel_id)
+            if channel:
+                # Envoyer un gif de chat
+                await channel.send("https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif")
+                # Vérifier s'il s'agit du message "Clémence au dodo ! HOP HOP HOP on arrête de travailler"
+                #if message == "Clémence au dodo ! HOP HOP HOP on arrête de travailler":
+                #    user = bot.get_user(USER_ID)
+                #    if user:
+                #        message += f" {user.mention}"
+                # Vérifier s'il s'agit des messages nécessitant une mention de rôle
+                if "Pause 10h15 ?" in message or "Miam 12h : 🐮 ou 12h15 : 🐔 ?" in message:
+                    role = discord.utils.get(channel.guild.roles, name="QuoiCouPauseurs")
+                    if role:
+                        message += f" {role.mention}"
+                sent_message = await channel.send(message)
+                # Ajouter des réactions au message
+                if "Pause 10h15 ?" in message:
+                    await sent_message.add_reaction("🌞")  # Soleil
+                elif "Miam 12h : 🐮 ou 12h15 : 🐔 ?" in message:
+                    await sent_message.add_reaction("🐮")  # Vache
+                    await sent_message.add_reaction("🐔")  # Poulet
+            else:
+                print(f"Channel with ID {channel_id} not found. Message not sent.")
 
-# Fonction pour déterminer la réponse à envoyer
-def determine_response_QUOI():
-    # Générer un nombre aléatoire entre 0 et 1
-    random_number = random.random()
-    # Si le nombre aléatoire est inférieur ou égal à 0.0003 (0.03% de chance)
-    if random_number <= 0.2:
-        return "coupaielecafé"
-    if random_number <= 0.05:
-        return "coutéunemerde"
-    else:
-        return "COUBEH"
-
-# Fonction pour déterminer la réponse à envoyer
-def determine_response_POURQUOI():
-    # Générer un nombre aléatoire entre 0 et 1
-    random_number = random.random()
-    # Si le nombre aléatoire est inférieur ou égal à 0.0003 (0.03% de chance)
-    if random_number <= 0.2:
-        with open(gif_path, "rb") as file:
-            gif = discord.File(file)
-            return gif
-    else:
-        return "Pour FEUR"
-    
 # Événement de réception de message
 @bot.event
 async def on_message(message):
-    # Vérifie si le mot "quoi" est présent dans le message, indépendamment de la casse
-    if 'quoi' in message.content.lower().split():
-        # Incrémente le compteur d'utilisation pour cet utilisateur
-        user_id = message.author.id
-        compteur_quoi[user_id] = compteur_quoi.get(user_id, 0) + 1
-        # Déterminer la réponse à envoyer
-        response = determine_response_QUOI()
-        # Utiliser la fonction reply pour répondre
-        await message.reply(response)
-      
-    if 'pourquoi' in message.content.lower().split():
-        # Incrémente le compteur d'utilisation pour cet utilisateur
-        user_id = message.author.id
-        compteur_quoi[user_id] = compteur_quoi.get(user_id, 0) + 1
-        responseP = determine_response_POURQUOI()
-        await message.reply(file=responseP)
+    # Générer un nombre aléatoire entre 0 et 1
+    random_number = random.random()
 
+    # Vérifier si le message contient l'un des mots interdits
+    mots_interdits = ["étienne", "etienne", "thierry", "jérémy", "jeremy"]
+    if any(mot in message.content.lower() for mot in mots_interdits):
+        # Envoyer un gif d'alerte
+        await message.channel.send("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExeW1xb2kxa2ZzeXBwYWZ6ajcyNWRrOXZvM3dob3N1MmdvdzB1MmpiciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3og0IOa1X349KZ8E1i/giphy.gif")
+        # Envoyer le message d'avertissement
+        await message.channel.send("ATTENTION mot interdit ! Utilisez plutôt les e-j-t-word.")
+
+    if random_number <= 0.009:
+            # Envoyer la réponse aléatoire
+            await message.channel.send("T'as les cramptés")
+
+    # Vérifier si l'utilisateur est celui spécifié
+    if message.author.id == 124917171359973376:
+        # Vérifier si le nombre aléatoire est inférieur ou égal à 0.05 (probabilité de 5%)
+        if random_number <= 0.005:
+            # Envoyer un gif de dab avec un message
+            await message.channel.send("https://i.gifer.com/hbA.gif")
+            await message.channel.send("Regarde c'est cool!")
+    
+    if "lune" in message.content.lower():
+        # Envoyer une image de la lune
+        await message.channel.send("https://imgur.com/gallery/gDd42uN")
+
+    # Vérifier si le message commence par "!pause"
     if message.content.startswith('!pause'):
         # Envoyer le message "PAUUUUUUUSE !!!!!" dans le canal spécifié
         await message.channel.send('PAUUUUUUUSE !!!!!  ⚠️')
 
-    # Permettre au bot de continuer à traiter les autres événements de message
+    # Continuer à traiter les autres événements de message
     await bot.process_commands(message)
-
-
-
-#Accès à la liste des compteurs de "quoi"
-@bot.command(name="compteurs_quoi")
-async def compteurs_quoi(ctx):
-    # Crée une liste de chaînes contenant les compteurs de chaque utilisateur
-    compteur_liste = [f"{bot.get_user(user_id).name}: {count}" for user_id, count in compteur_quoi.items()]
-    # Si aucun utilisateur n'a utilisé "quoi"
-    if not compteur_liste:
-        await ctx.send("Aucun utilisateur n'a utilisé le mot 'quoi'.")
-    else:
-        # Envoie la liste des compteurs à l'utilisateur qui a exécuté la commande
-        await ctx.send("\n".join(compteur_liste))
 
 #Commande pour proposer une pause l'aprem
 @bot.command(name="pause_aprem")
@@ -160,10 +118,12 @@ async def pause_aprem(ctx):
     sent_message = await ctx.send("Pause l'aprem ?")
     await sent_message.add_reaction("🌞")  # Soleil
 
-@bot.command(name="shiny_board")
-async def shiny_board(ctx):
-    sent_message = await ctx.send(ShinyBOARD)
-    await sent_message.add_reaction("✌️")  # Soleil
+#Commande pour souhaiter un bon anniversaire
+@bot.command(name="annif")
+async def annif(ctx):
+    sent_message = await ctx.send("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcmplczEwaWpld2d3dmxnMDZsbTZhMThyaHNrNjdibm54anlva2g4MSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/LzwcNOrbA3aYvXK6r7/giphy.gif")
+    await ctx.send("Bon anniversaire " + bot.get_user(365180026376945667).mention + "!")
+    await sent_message.add_reaction("🥳")
 
 # Événement de réaction
 @bot.event
@@ -181,7 +141,7 @@ async def on_reaction_add(reaction, user):
 # Événement de démarrage du bot
 @bot.event
 async def on_ready():
-    await save_counters_to_csv()
+    #await save_counters_to_csv()
     if bot.user:
         print(f'{bot.user.name} est prêt à fonctionner !')
     else:
@@ -195,22 +155,63 @@ async def on_ready():
     # À 11h
     asyncio.create_task(send_message_at_time(channel_id=CHANNEL_ID, message="Miam 12h : 🐮 ou 12h15 : 🐔 ?", hour=10, minute=0))
     # Clémence au dodo !
-    asyncio.create_task(send_message_at_time(channel_id=CHANNEL_ID, message="Clémence au dodo ! HOP HOP HOP on arrête de travailler", hour=14, minute=55))
+    # asyncio.create_task(send_message_at_time(channel_id=CHANNEL_ID, message="Clémence au dodo ! HOP HOP HOP on arrête de travailler", hour=14, minute=55))
 
+    # Vérifier si c'est le 13 avril
+    if datetime.datetime.now().month == 4 and datetime.datetime.now().day == 13:
+        # Récupérer le canal spécifié
+        channel = bot.get_channel(CHANNEL_ID)
+        if channel:
+            # Envoyer le message "Bon anniversaire" et mentionner l'utilisateur
+            await channel.send("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcmplczEwaWpld2d3dmxnMDZsbTZhMThyaHNrNjdibm54anlva2g4MSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/LzwcNOrbA3aYvXK6r7/giphy.gif")
+            await channel.send("Bon anniversaire " + bot.get_user(365180026376945667).mention + "!")
+        else:
+            print(f"Channel with ID {CHANNEL_ID} not found. Message not sent.")
+    
+    # Vérifier si c'est le 18 mai
+    if datetime.datetime.now().month == 5 and datetime.datetime.now().day == 18:
+        # Récupérer le canal spécifié
+        channel = bot.get_channel(CHANNEL_ID)
+        if channel:
+            # Envoyer le message "Bon anniversaire" et mentionner l'utilisateur
+            await channel.send("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMWsxd3N0ODI2eTd3MXZqMjBhc29peGVsbWx4NXNwOTRicnE2cndjaiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/lqf9NUmX7NjpCv31Er/giphy.gif")
+            await channel.send("Bon anniversaire " + bot.get_user(124917171359973376).mention + "!")
+        else:
+            print(f"Channel with ID {CHANNEL_ID} not found. Message not sent.")
+    
+    # Vérifier si c'est le 21 mai
+    if datetime.datetime.now().month == 5 and datetime.datetime.now().day == 21:
+        # Récupérer le canal spécifié
+        channel = bot.get_channel(CHANNEL_ID)
+        if channel:
+            # Envoyer le message "Bon anniversaire" et mentionner l'utilisateur
+            await channel.send("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOTE1emdnNTR4ZTFlZnNva2p1cDUwenhma3k1bmt2MDAwYWZibmczaSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/IFjSbBHETzzr6GJdwW/giphy-downsized-large.gif")
+            await channel.send("Bon anniversaire " + bot.get_user(386880970655268865).mention + "!")
+        else:
+            print(f"Channel with ID {CHANNEL_ID} not found. Message not sent.")
+    
+    # Vérifier si c'est le 05 septembre
+    if datetime.datetime.now().month == 9 and datetime.datetime.now().day == 5:
+        # Récupérer le canal spécifié
+        channel = bot.get_channel(CHANNEL_ID)
+        if channel:
+            # Envoyer le message "Bon anniversaire" et mentionner l'utilisateur
+            await channel.send("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaWpjdHR6M3c0b2Ezdnh5ZHoyazl6am85dTBoNDF2M2lsdDU2Y3Y5ZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Svc9uoN3nUHbq/giphy.gif")
+            await channel.send("Bon anniversaire " + bot.get_user(217279235021209600).mention + "!")
+        else:
+            print(f"Channel with ID {CHANNEL_ID} not found. Message not sent.")
 
-"""
-# Événement de réaction
-@bot.event
-async def on_reaction_add(reaction, user):
-    # Vérifier si le message a atteint le seuil de réactions et a pour titre "Pause 10h15 ?" ou "Miam 12h : 🐮 ou 12h15 : 🐔 ?"
-    if reaction.count >= REACTION_THRESHOLD and (reaction.message.content == "Pause 10h15 ?" or reaction.message.content == "Miam 12h : 🐮 ou 12h15 : 🐔 ?" or reaction.message.content == "PAUUUUUUUSE !!!!!  ⚠️"):
-        # Créer l'événement
-        event_title = "CAFE"
-        event_time = reaction.message.created_at.time()
-        await reaction.message.channel.send(f"Création de l'événement {event_title} à {event_time} !")
+    # Vérifier si c'est le 06 septembre
+    if datetime.datetime.now().month == 9 and datetime.datetime.now().day == 6:
+        # Récupérer le canal spécifié
+        channel = bot.get_channel(CHANNEL_ID)
+        if channel:
+            # Envoyer le message "Bon anniversaire" et mentionner l'utilisateur
+            await channel.send("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM243YzNteHh5c3J2eWdzaHdhZGprdHJnb20yZ2wwcHdibG1pZWZiMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/d3l79306Ne4Y8/giphy-downsized-large.gif")
+            await channel.send("Bon anniversaire " + bot.get_user(300762664714371073).mention + "!")
+        else:
+            print(f"Channel with ID {CHANNEL_ID} not found. Message not sent.")
 
-        # Ici, vous pouvez ajouter le code pour créer un événement dans votre calendrier.
-"""
 
 #commande Coucou
 @bot.command(name="coucou")
@@ -227,10 +228,6 @@ async def aide(ctx):
 
     # Envoyer la liste des commandes à l'utilisateur qui a exécuté la commande
     await ctx.send("Voici les commandes disponibles :\n" + "\n".join(commandes_disponibles))
-
-@bot.event
-async def on_disconnect():
-    await save_counters_to_csv()
 
 
 # Lancer le bot

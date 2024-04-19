@@ -12,3 +12,12 @@ RUN pip install --no-cache-dir -U discord.py python-dotenv
 
 # Commande pour exécuter le bot lorsque le conteneur démarre
 CMD ["python", "main.py"]
+
+#BUILD :
+#docker build --platform linux/arm/v7 -t exoune/image_quoicoucafe .
+
+#PUSH :
+#docker push exoune/image_quoicoucafe
+
+#PULL :
+#docker pull exoune/image_quoicoucafe
